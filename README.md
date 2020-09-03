@@ -7,3 +7,7 @@ VS Code
 Windows 10  
 
 
+//
+Python Libraries Required:
+
+Pandas; Numpy; 
