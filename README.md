@@ -10,4 +10,4 @@ Windows 10
 //
 Python Libraries Required:
 
-Pandas; Numpy; sklearn ; matplotlib 
+Pandas; Numpy; sklearn ; matplotlib ;googlesearch-python ;
