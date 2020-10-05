@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 msgLocation="/home/aditya/Documents/ML Stuff/usefull/*.msg"
 
 
-list_labels=["fraud","bribery"]
+list_labels=["fraud","bribery","defamation","corruption","criminal","scam" ,"defaulter "]
 list_articles=[]
 list_article_label=[]
 
