@@ -1,14 +1,16 @@
 import pickle
 import csv
 import tensorflow as tf
+import os
 import numpy as np
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from nltk.corpus import stopwords
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-vocab_size = 5000
-embedding_dim = 64
-max_length = 200
+vocab_size = 10
+embedding_dim = 6
+max_length = 20
 trunc_type = 'post'
 padding_type = 'post'
 oov_tok = '<OOV>'
@@ -16,7 +18,6 @@ training_portion = .8
 
 
 print(tf.__version__)
-print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('GPU')))
 STOPWORDS = set(stopwords.words('english'))
 
 list_articles=[]
@@ -80,10 +81,12 @@ model = tf.keras.Sequential([
     # When we have multiple outputs, softmax convert outputs layers into a probability distribution.
     tf.keras.layers.Dense(6, activation='softmax')
 ])
+model.summary()
 
 model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-num_epochs = 3
-history = model.fit(train_padded, training_label_seq, epochs=num_epochs, validation_data=(validation_padded, validation_label_seq), verbose=2)
+
+num_epochs = 10
+history = model.fit(train_padded, training_label_seq,batch_size=1, epochs=num_epochs, validation_data=(validation_padded, validation_label_seq), verbose=2)
 def plot_graphs(history, string):
   plt.plot(history.history[string])
   plt.plot(history.history['val_'+string])
