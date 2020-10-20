@@ -5,10 +5,10 @@ import re
 import requests
 from bs4 import BeautifulSoup
 
-msgLocation="/home/aditya/Documents/ML Stuff/usefull/*.msg"
+msgLocation="/home/aditya/Documents/ML Stuff/ab/*.msg"
 
 
-list_labels=["fraud","bribery","defamation","corruption","criminal","scam" ,"defaulter "]
+list_labels=["fraud","bribery","defamation","corruption","criminal","scam" ,"defaulter","none"]
 list_articles=[]
 list_article_label=[]
 
@@ -20,17 +20,18 @@ try:
         list_article_label = pickle.load(fp)
 except :
     print("No file detected")
-
+print(len(list_articles))
+print(len(list_article_label))
 files=glob.glob(msgLocation)
 for fl in files:
     print (fl)
-    label=""
+    label="none"
     name=str(fl).lower()
-    for x in list_labels:
-        z= re.search(x, name)
-        if z:
-            label=x
-            break
+    #for x in list_labels:
+    #    z= re.search(x, name)
+    #    if z:
+    #        label=x
+    #        break
 
     f= r'%s' % fl
     msg = extract_msg.Message(f)
@@ -49,6 +50,7 @@ for fl in files:
                     html_text = requests.get(furl[0]).text
                     soup = BeautifulSoup(html_text, 'html.parser')
                     #print(soup.get_text())
+                    print([label,soup.get_text()])
                     list_articles.append(soup.get_text())
                     list_article_label.append(label)
 
