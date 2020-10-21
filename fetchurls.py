@@ -8,7 +8,8 @@ import pandas
 
 colnames = ['urls', 'tag']
 data = pandas.read_csv('ML dataset - Sheet1.csv', names=colnames)
-
+list_articles=[]
+list_article_label=[]
 urls=data.urls.tolist()
 list1=data.tag.tolist()
 #print(urls)
@@ -22,13 +23,15 @@ try:
 except :
     print("No file detected")
 for (x,y) in zip(urls,list1):
-#  print(x)
-    html_text = requests.get(x).text
-    soup = BeautifulSoup(html_text, 'html.parser')
-    #print(soup.get_text())
-    print([label,soup.get_text()])
-    list_articles.append(soup.get_text())
-    list_article_label.append(y)
+    try:
+        print(x)
+        html_text = requests.get(x,timeout=10).text
+        soup = BeautifulSoup(html_text, 'html.parser')
+        print(soup.get_text())
+        list_articles.append(soup.get_text())
+        list_article_label.append(y)
+    except:
+        print("Error")
 
 with open("articles.txt", "wb") as fp:   #Pickling
   pickle.dump(list_articles, fp)
