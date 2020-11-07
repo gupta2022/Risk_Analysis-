@@ -24,6 +24,7 @@ def train(X,y):
                 c1+=1
             else:
                 c2+=1
+
     print([c1,c2]);
     print()
     print('Accuracy score: ', accuracy_score(y_test, predictions))
@@ -35,7 +36,7 @@ map_labels={"fraud":0,"bribery":1,"defamation":2,"corruption":3,"scam":4 ,"defau
 list_articles=[]
 list_article_label=[]
 articles=[]
-frequency=[0,0,0,0,0,0,0]
+#frequency=[0,0,0,0,0,0,0]
 X_train=[]
 X_test=[]
 y_train=[]
@@ -56,11 +57,13 @@ for i in range(0,6):
     for x,y in zip(list_articles,list_article_label):
         if(y!=6):
             if(y==i):
+
                 X.append(x)
                 Y.append(1)
             else:
                 X.append(x)
                 Y.append(0)
+    print(i)
     train(X,Y)
 
 
