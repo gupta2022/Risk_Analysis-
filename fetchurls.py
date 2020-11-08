@@ -1,6 +1,5 @@
 import glob
 import pickle
-import extract_msg
 import re
 import requests
 from bs4 import BeautifulSoup
@@ -29,7 +28,7 @@ for index,row in data.iterrows():
             print(x)
             html_text = requests.get(x,timeout=10).text
             soup = BeautifulSoup(html_text, 'html.parser')
-            print(soup.get_text())
+            #print(soup.get_text())
             data['article'][index]=soup.get_text()
             data.to_csv('urlSet.csv', index=False )
             #list_articles.append(soup.get_text())

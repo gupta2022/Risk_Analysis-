@@ -5,7 +5,8 @@
 Python 3.8.5  
 VS Code  
 Windows 10  
-
+Environment name:env3
+. env3/bin/activate
 
 //
 Python Libraries Required:
