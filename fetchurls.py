@@ -1,45 +1,65 @@
 import glob
 import pickle
 import re
+import time
 import requests
 from bs4 import BeautifulSoup
-import pandas
+import pandas as pd
 
-colnames = ['urls', 'tag','article']
-data = pandas.read_csv('urlSet.csv')
+headers = {
+    'user-agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:82.0) Gecko/20100101 Firefox/82.0'}
+try:
+    data = pd.read_pickle('dataset.pkl')
+except:
+    print("Here")
+    data = pd.read_csv('urlSet.csv')
 print(data)
 print(data.columns)
-#list_articles=[]
-#list_article_label=[]
-#urls=data.urls.tolist()
-#list1=data.tag.tolist()
-c=data.count()
+len1=-1
+try:
+    with open("index.txt", "rb") as fp:   # Unpickling
+        len1 = pickle.load(fp)
+except:
+    print("1st run")
 
-len1=c['article']
 print(len1)
-#print(urls)
-#print(list1)
-
+print(data.loc[len1])
 for index,row in data.iterrows():
+    row = row.copy()
     x=row['url']
     y=row['tag']
-    if(len1<0):
-        try:
-            print(x)
-            html_text = requests.get(x,timeout=10).text
-            soup = BeautifulSoup(html_text, 'html.parser')
-            #print(soup.get_text())
-            data['article'][index]=soup.get_text()
-            data.to_csv('urlSet.csv', index=False )
-            #list_articles.append(soup.get_text())
-            #list_article_label.append(y)
-        except:
-            print("Error")
-    else:
-        len1-=1
+    if(index>len1):
+        while True:
+            flag=True
+            try:
+                print(x)
+                time.sleep(0.01)
+                html_text = requests.get(x,headers=headers,timeout=20).text
+                soup = BeautifulSoup(html_text, 'html.parser')
+                text=soup.get_text()
+                data.loc[index,'article']=text
+                #data.loc['article'][index]=soup.get_text()
+                data.to_pickle('dataset.pkl')
 
-#with open("articles.txt", "wb") as fp:   #Pickling
-#  pickle.dump(list_articles, fp)
+                with open("index.txt", "wb") as fp:
+                    pickle.dump(index, fp)
 
-#with open("articles_labels.txt", "wb") as fp:   #Pickling
-#  pickle.dump(list_article_label, fp)
+            except requests.ConnectionError as e:
+                print("OOPS!! Connection Error. Make sure you are connected to Internet. Technical Details given below.\n")
+                print(str(e))
+                if 'Connection reset by peer' not in e:
+                    time.sleep(30)
+                    flag=False
+            except requests.Timeout as e:
+                print("OOPS!! Timeout Error")
+                print(str(e))
+                flag=False
+                time.sleep(20)
+            except requests.RequestException as e:
+                print("OOPS!! General Error")
+                print(str(e))
+            except Exception as e:
+                print(e)
+            finally:
+                if flag:
+                    break
