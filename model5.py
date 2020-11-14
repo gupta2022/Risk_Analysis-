@@ -11,7 +11,7 @@ from sklearn.naive_bayes import GaussianNB
 #from sklearn.cluster import KMeans
 import numpy as np
 
-map_labels={"fraud":0,"bribery":1,"defamation":2,"corruption":3,"scam":4}
+
 try:
     data = pd.read_pickle('dataset.pkl')
 except:
