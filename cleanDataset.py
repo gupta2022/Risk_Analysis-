@@ -8,6 +8,7 @@ errorList=["page not found","error 40","error 50", "are you a robot","the connec
 "unable to find the proxy server","the proxy server is refusing connections","unable to connect"]
 try:
     data = pd.read_pickle('dataset.pkl')
+    data=data[['url','tag','article']]
 except:
     print("Error")
 

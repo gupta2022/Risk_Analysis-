@@ -15,13 +15,24 @@ import numpy as np
 QUOTES = re.compile(r'(writes in|writes:|wrote:|says:|said:|^In article|^Quoted from|^\||^>)')
 
 try:
-    data = pd.read_pickle('dataset.pkl')
+    data = pd.read_pickle('cleanDataset.pkl')
 except:
     print("dataset Not found")
 
 data['label'] = LabelEncoder().fit_transform(data['tag'])
 #print(data)
 data=data[['article','label']]
+print(data)
+## Full Model F1 score:  0.691239827668741
+
+#data=data[data['label']!=5] ##Model2 F1 score:  0.8933074684772065
+#data=data[data['label']!=0]
+#data=data[data['label']!=2]
+
+
+#data=data[data['label']!=3] ## Model1 F1 score:  0.8902527075812274
+#data=data[data['label']!=1]
+
 print(data)
 data.article=data.article.astype(str)
 
@@ -55,8 +66,8 @@ def preprocess_data(data):
 #for index,row in data.iterrows():
 #    row = row.copy()
 #    data.loc[index,'article']=preprocess_data(row['article'])
+#print(data)
 
-print(data)
 X_train, X_test, y_train, y_test = train_test_split(data['article'], data['label'], test_size=0.2, random_state=1,shuffle=True)
 #print(y_train.value_counts())
 #print(y_test.value_counts())
@@ -72,6 +83,9 @@ predictions = naive_bayes.predict(X_test_cv)
 predictions_prob = naive_bayes.predict_proba(X_test_cv)
 print(predictions)
 print(predictions_prob)
+#for x in predictions_prob:
+#    if 1.00000000e+00 not in x:
+#        print(x)
 
 print('Accuracy score: ', accuracy_score(y_test, predictions))
 print('Precision score: ', precision_score(y_test, predictions,average='micro'))

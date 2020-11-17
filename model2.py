@@ -7,7 +7,7 @@ import pandas as pd
 #from sklearn.cluster import KMeans
 import numpy as np
 
-map_labels={"fraud":0,"bribery":1,"defamation":2,"corruption":3,"scam":4 ,"defaulter":5,"none":6}
+map_labels={"bribery":0,"corruption":1,"defamation":2,"fraud":3,"scam":4 ,"defaulter":5,"none":6}
 list_articles=[]
 list_article_label=[]
 articles=[]
