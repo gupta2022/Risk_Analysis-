@@ -10,7 +10,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score,f1_sco
 import pandas as pd
 #from sklearn.cluster import KMeans
 import numpy as np
-
+filename="model2.pkl"
 
 QUOTES = re.compile(r'(writes in|writes:|wrote:|says:|said:|^In article|^Quoted from|^\||^>)')
 
@@ -25,13 +25,13 @@ data=data[['article','label']]
 print(data)
 ## Full Model F1 score:  0.691239827668741
 
-#data=data[data['label']!=5] ##Model2 F1 score:  0.8933074684772065
-#data=data[data['label']!=0]
-#data=data[data['label']!=2]
-
-
-#data=data[data['label']!=3] ## Model1 F1 score:  0.8902527075812274
-#data=data[data['label']!=1]
+if( filename=="model1.pkl"):
+    data=data[data['label']!=5] ##Model2 F1 score:  0.8933074684772065
+    data=data[data['label']!=0]
+    data=data[data['label']!=2]
+else:
+    data=data[data['label']!=3] ## Model1 F1 score:  0.8902527075812274
+    data=data[data['label']!=1]
 
 print(data)
 data.article=data.article.astype(str)
@@ -86,7 +86,7 @@ print(predictions_prob)
 #for x in predictions_prob:
 #    if 1.00000000e+00 not in x:
 #        print(x)
-
+pickle.dump(naive_bayes, open(filename, 'wb'))
 print('Accuracy score: ', accuracy_score(y_test, predictions))
 print('Precision score: ', precision_score(y_test, predictions,average='micro'))
 print('Recall score: ', recall_score(y_test, predictions,average='micro'))
