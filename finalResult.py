@@ -17,6 +17,8 @@ import sys
 
 #For help only
 map_labels={0:"bribery",1:"corruption",2:"defamation",3:"fraud",4:"none",5:"scam"}
+headers = {
+    'user-agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:82.0) Gecko/20100101 Firefox/82.0' }
 cv = CountVectorizer(strip_accents='ascii', token_pattern=u'(?ui)\\b\\w*[a-z]+\\w*\\b', lowercase=True, stop_words='english')
 
 
@@ -75,25 +77,58 @@ def getPredictions(company):
     for search_term in list_of_topics:
         urlData = get_news(search_term+" "+company, data_filter="this year")
         for url in urlData:
-            dict={}
-            dict["company"]=company
-            dict["url"]=url
-            html_text = requests.get(url).text
-            soup = BeautifulSoup(html_text, 'html.parser')
-            articles=[]
-            articles.append(soup.get_text())
-            X_train_cv = cv.fit_transform(articles)
-            p1 = model1.predict(X_test_cv)
-            p2 = model2.predict(X_test_cv)
-            if(p1==4):
-                dict["label"=map_labels[p2]
-            elif(p2==4):
-                dict["label"=map_labels[p1]
-            else:
-                dict["label"=map_labels[4]
+            while True:
+                flag=True
+                try:
+                    dict={}
+                    dict["company"]=company
+                    dict["url"]=url
+                    time.sleep(0.01)
+                    html_text = requests.get(url,headers=headers,timeout=20).text
+                    soup = BeautifulSoup(html_text, 'html.parser')
+                    articles=[]
+                    articles.append(soup.get_text())
+                    X_train_cv = cv.fit_transform(articles)
+                    p1 = model1.predict(X_test_cv)
+                    p2 = model2.predict(X_test_cv)
 
-            temp=pd.DataFrame(dict)
-            resultDataset.append(temp,ignore_index = True)
+                    if(p1==4):
+                        dict["label"=map_labels[p2]
+                    elif(p2==4):
+                        dict["label"=map_labels[p1]
+                    else:
+                        dict["label"=map_labels[4]
+
+                    temp=pd.DataFrame(dict)
+                    resultDataset.append(temp,ignore_index = True)
+
+                except requests.ConnectionError as e:
+
+                    print("OOPS!! Connection Error. Make sure you are connected to Internet. Technical Details given below.\n")
+                    print(str(e))
+                    if 'Connection reset by peer' not in e:
+                        time.sleep(30)
+                        flag=False
+
+                except requests.Timeout as e:
+
+                    print("OOPS!! Timeout Error")
+                    print(str(e))
+                    flag=False
+                    time.sleep(20)
+
+                except requests.RequestException as e:
+
+                    print("OOPS!! General Error")
+                    print(str(e))
+
+                except Exception as e:
+
+                    print(e)
+
+                finally:
+                    if flag:
+                        break
 
 
 
