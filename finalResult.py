@@ -7,6 +7,7 @@ import xml.etree.ElementTree as ET # built in library
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.naive_bayes import MultinomialNB
 import pandas as pd
+from bs4 import BeautifulSoup
 import numpy as np
 from tkinter import *
 from tkinter.filedialog import askopenfilename
@@ -21,8 +22,19 @@ headers = {
     'user-agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:82.0) Gecko/20100101 Firefox/82.0' }
 cv = CountVectorizer(strip_accents='ascii', token_pattern=u'(?ui)\\b\\w*[a-z]+\\w*\\b', lowercase=True, stop_words='english')
 
+try:
+    resultDataset = pd.read_csv('resultDataset.csv')
 
-resultDataset=pd.DataFrame()
+except:
+    print("First run")
+    resultDataset=pd.DataFrame( columns=('company', 'url', 'label') )
+
+try:
+    with open("index.txt", "rb") as fp:   # Unpickling
+        len1 = pickle.load(fp)
+except:
+    print("1st run")
+
 
 Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
 filePath = askopenfilename() # show an "Open" dialog box and return the path to the selected file
@@ -30,7 +42,7 @@ print(filePath)
 data = pd.read_csv(filePath)
 
 def clean_url(searched_item,data_filter):
-    x =pd.datetime.today()
+    x=pd.datetime.today()
     today =str(x)[:10]
     yesterday = str(x + pd.Timedelta(days=-1))[:10]
     this_week = str(x + pd.Timedelta(days=-7))[:10]
@@ -67,6 +79,8 @@ companyList=data["company"].tolist()
 try:
     model1 = pickle.load(open("model1.pkl", 'rb'))
     model2 = pickle.load(open("model2.pkl", 'rb'))
+    cv1=pickle.load(open("model1cv.pkl", 'rb'))
+    cv2=pickle.load(open("model2cv.pkl", 'rb'))
 except:
     print("Train The models First or courupt models")
     exit()
@@ -75,32 +89,43 @@ def getPredictions(company):
 
     list_of_topics=["bribery","corruption","defamation","fraud","scam"]
     for search_term in list_of_topics:
+        list_of_topics[1]
         urlData = get_news(search_term+" "+company, data_filter="this year")
         for url in urlData:
             while True:
                 flag=True
                 try:
-                    dict={}
-                    dict["company"]=company
-                    dict["url"]=url
+                    #dict={}
+                    rowList=[]
+                    rowList.append(company)
+                    #dict["company"]=company
+                    #dict["url"]=url
+                    rowList.append(url)
                     time.sleep(0.01)
                     html_text = requests.get(url,headers=headers,timeout=20).text
                     soup = BeautifulSoup(html_text, 'html.parser')
                     articles=[]
                     articles.append(soup.get_text())
-                    X_train_cv = cv.fit_transform(articles)
-                    p1 = model1.predict(X_test_cv)
-                    p2 = model2.predict(X_test_cv)
+                    X_test_cv1 = cv1.transform(articles)
+                    X_test_cv2 = cv2.transform(articles)
+                    p1 = model1.predict(X_test_cv1)
+                    p2 = model2.predict(X_test_cv2)
 
                     if(p1==4):
-                        dict["label"=map_labels[p2]
+                        #dict["label"]=map_labels[p2]
+                        rowList.append(map_labels[p2])
                     elif(p2==4):
-                        dict["label"=map_labels[p1]
+                        #dict["label"]=map_labels[p1]
+                        rowList.append(map_labels[p1])
                     else:
-                        dict["label"=map_labels[4]
+                        #dict["label"]=map_labels[4]
+                        rowList.append(map_labels[4])
 
-                    temp=pd.DataFrame(dict)
-                    resultDataset.append(temp,ignore_index = True)
+                    #temp=pd.DataFrame.from_dict(dict)
+                    resultDataset.loc[len(resultDataset.index)]=rowList #index=[len(resultDataset.index)],
+
+                    print(resultDataset)
+                    #resultDataset=resultDataset.append(temp,ignore_index = True, verify_integrity=False, sort=None)
 
                 except requests.ConnectionError as e:
 
@@ -133,5 +158,6 @@ def getPredictions(company):
 
 
 for company in companyList:
-    getPredictions( getArticles(company) )
-resultDataset.to_csv("resultDataset.csv")
+    #company
+    getPredictions( company )
+    resultDataset.to_csv("resultDataset.csv")

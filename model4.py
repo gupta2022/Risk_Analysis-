@@ -87,6 +87,7 @@ print(predictions_prob)
 #    if 1.00000000e+00 not in x:
 #        print(x)
 pickle.dump(naive_bayes, open(filename, 'wb'))
+pickle.dump(cv, open(filename.replace(".pkl","")+"cv.pkl", 'wb'))
 print('Accuracy score: ', accuracy_score(y_test, predictions))
 print('Precision score: ', precision_score(y_test, predictions,average='micro'))
 print('Recall score: ', recall_score(y_test, predictions,average='micro'))
