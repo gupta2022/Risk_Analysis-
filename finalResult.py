@@ -12,34 +12,70 @@ import numpy as np
 from tkinter import *
 from tkinter.filedialog import askopenfilename
 from tkinter import filedialog
+import tkinter.messagebox
 import requests
 import sys
+import os
 
 
 #For help only
 map_labels={0:"bribery",1:"corruption",2:"defamation",3:"fraud",4:"none",5:"scam"}
 headers = {
     'user-agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:82.0) Gecko/20100101 Firefox/82.0' }
-cv = CountVectorizer(strip_accents='ascii', token_pattern=u'(?ui)\\b\\w*[a-z]+\\w*\\b', lowercase=True, stop_words='english')
+
+
+index=-1
+filePath=""
+answer=False
 
 try:
     resultDataset = pd.read_csv('resultDataset.csv')
 
 except:
     print("First run")
-    resultDataset=pd.DataFrame( columns=('company', 'url', 'label') )
+    resultDataset=pd.DataFrame(  )
 
 try:
-    with open("index.txt", "rb") as fp:   # Unpickling
-        len1 = pickle.load(fp)
+    with open("cindex.txt", "rb") as fp:   # Unpickling
+        index = pickle.load(fp)
+    with open("filepath.txt", "rb") as fp:   # Unpickling
+        filePath = pickle.load(fp)
 except:
     print("1st run")
 
+if(filePath!=""):
+    answer = messagebox.askokcancel("Resume", "Found and old instance, countinue that?")
 
 Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
-filePath = askopenfilename() # show an "Open" dialog box and return the path to the selected file
+if(answer==False):
+    filePath = askopenfilename() # show an "Open" dialog box and return the path to the selected file
 print(filePath)
-data = pd.read_csv(filePath)
+if(filePath==()):
+    messagebox.showinfo("Error","Connot Work Without CSV file")
+    exit()
+try:
+    data = pd.read_csv(filePath)
+except:
+    messagebox.showinfo("Error","Unable Read The csv")
+    exit()
+
+try:
+    companyList=data["company"].tolist()
+except:
+    messagebox.showinfo("Error","Check if CSV contains column named 'company'")
+    exit()
+
+with open("filePath.txt", "wb") as fp:
+    pickle.dump(filePath, fp)
+try:
+    model1 = pickle.load(open("model1.pkl", 'rb'))
+    model2 = pickle.load(open("model2.pkl", 'rb'))
+    cv1=pickle.load(open("model1cv.pkl", 'rb'))
+    cv2=pickle.load(open("model2cv.pkl", 'rb'))
+except:
+    messagebox.showinfo("Error","Train Models first")
+    exit()
+
 
 def clean_url(searched_item,data_filter):
     x=pd.datetime.today()
@@ -63,7 +99,6 @@ def clean_url(searched_item,data_filter):
     print (url)
     return url
 
-# clear the description
 
 
 def get_news(search_term, data_filter=None):
@@ -74,24 +109,16 @@ def get_news(search_term, data_filter=None):
 
     return link
 
-companyList=data["company"].tolist()
-
-try:
-    model1 = pickle.load(open("model1.pkl", 'rb'))
-    model2 = pickle.load(open("model2.pkl", 'rb'))
-    cv1=pickle.load(open("model1cv.pkl", 'rb'))
-    cv2=pickle.load(open("model2cv.pkl", 'rb'))
-except:
-    print("Train The models First or courupt models")
-    exit()
-
 def getPredictions(company):
 
+    companyData=pd.DataFrame( columns=('company', 'url', 'label') )
+
     list_of_topics=["bribery","corruption","defamation","fraud","scam"]
+
     for search_term in list_of_topics:
-        list_of_topics[1]
         urlData = get_news(search_term+" "+company, data_filter="this year")
         for url in urlData:
+            print(company,url)
             while True:
                 flag=True
                 try:
@@ -111,20 +138,26 @@ def getPredictions(company):
                     p1 = model1.predict(X_test_cv1)
                     p2 = model2.predict(X_test_cv2)
 
-                    if(p1==4):
+                    if(p1[0]==4):
                         #dict["label"]=map_labels[p2]
-                        rowList.append(map_labels[p2])
-                    elif(p2==4):
+                        rowList.append(map_labels[p2[0]])
+                        companyData.loc[len(companyData.index)]=rowList
+                    elif(p2[0]==4):
                         #dict["label"]=map_labels[p1]
-                        rowList.append(map_labels[p1])
+                        rowList.append(map_labels[p1[0]])
+                        companyData.loc[len(companyData.index)]=rowList
                     else:
                         #dict["label"]=map_labels[4]
-                        rowList.append(map_labels[4])
+                        rowList1=[ company,url,map_labels[p2[0]]  ]
+                        rowList.append(map_labels[p1[0]])
+                        companyData.loc[len(companyData.index)]=rowList
+                        companyData.loc[len(companyData.index)]=rowList
+
 
                     #temp=pd.DataFrame.from_dict(dict)
-                    resultDataset.loc[len(resultDataset.index)]=rowList #index=[len(resultDataset.index)],
+                     #index=[len(resultDataset.index)],
 
-                    print(resultDataset)
+                    #print(companyData)
                     #resultDataset=resultDataset.append(temp,ignore_index = True, verify_integrity=False, sort=None)
 
                 except requests.ConnectionError as e:
@@ -148,16 +181,31 @@ def getPredictions(company):
                     print(str(e))
 
                 except Exception as e:
-
                     print(e)
 
                 finally:
                     if flag:
                         break
 
+    outdir = './companyData'
+    if not os.path.exists(outdir):
+        os.mkdir(outdir)
+    companyData.to_csv("companyData/"+company+".csv")
+
+    dict={"company":company}
+    for topic in list_of_topics:
+        companyData = companyData.apply(lambda x : True
+                if x['label'] == topic else False, axis = 1)
+
+        dict[topic] = len(companyData[companyData == True].index)
+    resultDataset.loc[len(resultDataset.index)]=dict
 
 
-for company in companyList:
-    #company
-    getPredictions( company )
-    resultDataset.to_csv("resultDataset.csv")
+for i,company in enumerate(companyList):
+    print(i,index)
+    if(i>index):
+        print(index)
+        getPredictions( company )
+        resultDataset.to_csv("resultDataset.csv")
+        with open("cindex.txt", "wb") as fp:
+            pickle.dump(i, fp)
