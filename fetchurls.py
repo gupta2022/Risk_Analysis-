@@ -11,7 +11,7 @@ headers = {
     'user-agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:82.0) Gecko/20100101 Firefox/82.0'}
 len1 = -1
 try:
-    data = pd.read_pickle('dataset.pkl')
+    data = pd.read_pickle('cleanDataset.pkl')
     len1=len(data)
 except:
     print("dataset.pkl not found")
@@ -55,7 +55,7 @@ for index, row in data.iterrows():
                 text = soup.get_text()
                 data.loc[index, 'article'] = text
                 data.loc[index, 'tag'] = y
-                data.to_pickle('dataset.pkl')
+                data.to_pickle('cleanDataset.pkl')
                 with open("index.txt", "wb") as fp:
                     pickle.dump(index, fp)
 
