@@ -22,6 +22,7 @@ import os
 
 
 #For help only
+#tags searched
 map_labels={0:"bribery",1:"corruption",2:"defamation",3:"fraud",4:"none",5:"scam"}
 #used to identify a system
 headers = {
@@ -48,12 +49,14 @@ except:
 
 if( firstRun==False):
     try:
+        #reading the csv file containg url and tags
         resultDataset = pd.read_csv(dateTime+'/resultDataset.csv')
     except:       
         messagebox.showinfo("Error","ResultDataset.csv not found to reume operation")
         exit()
 
     try:
+        #loading the index of the last known position
         with open(dateTime+"/cindex.txt", "rb") as fp:   # Unpickling
             index = pickle.load(fp)
     except:
@@ -66,10 +69,10 @@ if( firstRun==False):
     except:
         messagebox.showinfo("Error","filepath.txt not found to reume operation")
         exit()
-
+    #checking error for filepath
     if(filePath!=""):
         answer = messagebox.askokcancel("Resume", "Found and old instance, countinue that?")
-        
+    
     Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
     
     if(answer==False):
@@ -81,7 +84,7 @@ if( firstRun==False):
 else:
     Tk().withdraw()
     filePath = askopenfilename()
-
+#checking if not file has been selected
 if(filePath==()):
     messagebox.showinfo("Error","Connot Work Without CSV file")
     exit()
@@ -92,11 +95,12 @@ except:
     exit()
 
 try:
+    #reading the list of companies
     companyList=data["company"].tolist()
 except:
     messagebox.showinfo("Error","Check if CSV contains column named 'company'")
     exit()
-
+#saving date & time of current operation for resumming in future
 with open("dtime.txt", "wb") as fp:
     pickle.dump(dateTime, fp)
 outdir = './'+dateTime
@@ -116,7 +120,7 @@ except:
     messagebox.showinfo("Error","Train Models first")
     exit()
 
-
+#generating the url for fetching of 100 articles for a topic
 def clean_url(searched_item,data_filter):
     x=datetime.now()
     today =str(x)[:10]
@@ -140,7 +144,7 @@ def clean_url(searched_item,data_filter):
     return url
 
 
-
+#geting the news from the searched query
 def get_news(search_term, data_filter=None):
     url = clean_url(search_term, data_filter)
     response = requests.get(url)
@@ -148,7 +152,7 @@ def get_news(search_term, data_filter=None):
     link = [i.text for i in root.findall('.//channel/item/link') ]
 
     return link
-
+#genrating predictions using saved model
 def getPredictions(company):
 
     companyData=pd.DataFrame( columns=('company', 'url', 'label') )
