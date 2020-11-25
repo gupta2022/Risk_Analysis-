@@ -4,6 +4,7 @@ import re
 import string
 import time # for timing script
 import xml.etree.ElementTree as ET # built in library
+from datetime import datetime
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.naive_bayes import MultinomialNB
 import pandas as pd
@@ -12,44 +13,75 @@ import numpy as np
 from tkinter import *
 from tkinter.filedialog import askopenfilename
 from tkinter import filedialog
+from tkinter import ttk
 import tkinter.messagebox
 import requests
 import sys
+import threading
 import os
 
 
 #For help only
 map_labels={0:"bribery",1:"corruption",2:"defamation",3:"fraud",4:"none",5:"scam"}
+#used to identify a system
 headers = {
     'user-agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:82.0) Gecko/20100101 Firefox/82.0' }
 
 
-index=-1
+index=-1 #used to resume progress
 filePath=""
-answer=False
+answer=False # answer for whether user wants to resume
+dateTime=str(datetime.now().strftime("%d/%m/%Y %H:%M:%S")).replace("/","-")
+dateTime=dateTime.replace(":","-")
+firstRun=True
+resultDataset=pd.DataFrame(columns=["company","bribery","corruption","defamation","fraud","scam","none"])
 
 try:
-    resultDataset = pd.read_csv('resultDataset.csv')
-
+    with open("dtime.txt", "rb") as fp:   # Unpickling
+        dateTime = pickle.load(fp)
+        if(dateTime!=""):
+            firstRun=False 
 except:
-    print("First run")
-    resultDataset=pd.DataFrame(  )
+    print("1st Run")
+    dateTime=str(datetime.now().strftime("%d/%m/%Y %H:%M:%S")).replace("/","-")
+    dateTime=dateTime.replace(":","-")
 
-try:
-    with open("cindex.txt", "rb") as fp:   # Unpickling
-        index = pickle.load(fp)
-    with open("filepath.txt", "rb") as fp:   # Unpickling
-        filePath = pickle.load(fp)
-except:
-    print("1st run")
+if( firstRun==False):
+    try:
+        resultDataset = pd.read_csv(dateTime+'/resultDataset.csv')
+    except:       
+        messagebox.showinfo("Error","ResultDataset.csv not found to reume operation")
+        exit()
 
-if(filePath!=""):
-    answer = messagebox.askokcancel("Resume", "Found and old instance, countinue that?")
+    try:
+        with open(dateTime+"/cindex.txt", "rb") as fp:   # Unpickling
+            index = pickle.load(fp)
+    except:
+        messagebox.showinfo("Error","index.txt not found to reume operation")
+        exit()
 
-Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
-if(answer==False):
-    filePath = askopenfilename() # show an "Open" dialog box and return the path to the selected file
-print(filePath)
+    try:
+        with open(dateTime+"/filepath.txt", "rb") as fp:   # Unpickling
+            filePath = pickle.load(fp)
+    except:
+        messagebox.showinfo("Error","filepath.txt not found to reume operation")
+        exit()
+
+    if(filePath!=""):
+        answer = messagebox.askokcancel("Resume", "Found and old instance, countinue that?")
+        
+    Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
+    
+    if(answer==False):
+        filePath = askopenfilename() # show an "Open" dialog box and return the path to the selected file
+        index=-1
+        resultDataset=pd.DataFrame(columns=["company","bribery","corruption","defamation","fraud","scam","none"])
+    
+
+else:
+    Tk().withdraw()
+    filePath = askopenfilename()
+
 if(filePath==()):
     messagebox.showinfo("Error","Connot Work Without CSV file")
     exit()
@@ -65,8 +97,16 @@ except:
     messagebox.showinfo("Error","Check if CSV contains column named 'company'")
     exit()
 
-with open("filePath.txt", "wb") as fp:
+with open("dtime.txt", "wb") as fp:
+    pickle.dump(dateTime, fp)
+outdir = './'+dateTime
+if not os.path.exists(outdir):
+    os.mkdir(outdir)
+with open(dateTime+"/filePath.txt", "wb") as fp:
     pickle.dump(filePath, fp)
+with open(dateTime+"/cindex.txt", "wb") as fp:
+    pickle.dump(index, fp)
+resultDataset.to_csv(dateTime+"/resultDataset.csv")
 try:
     model1 = pickle.load(open("model1.pkl", 'rb'))
     model2 = pickle.load(open("model2.pkl", 'rb'))
@@ -78,7 +118,7 @@ except:
 
 
 def clean_url(searched_item,data_filter):
-    x=pd.datetime.today()
+    x=datetime.now()
     today =str(x)[:10]
     yesterday = str(x + pd.Timedelta(days=-1))[:10]
     this_week = str(x + pd.Timedelta(days=-7))[:10]
@@ -112,9 +152,8 @@ def get_news(search_term, data_filter=None):
 def getPredictions(company):
 
     companyData=pd.DataFrame( columns=('company', 'url', 'label') )
-
+    j=0
     list_of_topics=["bribery","corruption","defamation","fraud","scam"]
-
     for search_term in list_of_topics:
         urlData = get_news(search_term+" "+company, data_filter="this year")
         for url in urlData:
@@ -152,6 +191,11 @@ def getPredictions(company):
                         rowList.append(map_labels[p1[0]])
                         companyData.loc[len(companyData.index)]=rowList
                         companyData.loc[len(companyData.index)]=rowList
+                    j+=1
+                    print(j)
+                    progress_bar['value'] = int( j/ 5)
+                    label_4["text"]=" "+str(int(j/5))+"%"
+                    master.update()
 
 
                     #temp=pd.DataFrame.from_dict(dict)
@@ -187,25 +231,72 @@ def getPredictions(company):
                     if flag:
                         break
 
-    outdir = './companyData'
+    outdir = './'+dateTime+'/companyData'
     if not os.path.exists(outdir):
         os.mkdir(outdir)
-    companyData.to_csv("companyData/"+company+".csv")
+    companyData.to_csv(dateTime+"/companyData/"+company+".csv")
 
-    dict={"company":company}
+    dict1={"company":company}
+    total=0
     for topic in list_of_topics:
-        companyData = companyData.apply(lambda x : True
-                if x['label'] == topic else False, axis = 1)
+        tempData = companyData[companyData["label"]==topic]
+        dict1[topic] = len(tempData)
+        total+=dict1[topic]
+    dict1["none"]=len(companyData)-total
+    resultDataset.loc[len(resultDataset.index)]=dict1
 
-        dict[topic] = len(companyData[companyData == True].index)
-    resultDataset.loc[len(resultDataset.index)]=dict
 
+master = Tk()
+ 
 
+# Create a progressbar widget
+progress_bar = ttk.Progressbar(master, orient="horizontal",
+                              mode="determinate", maximum=100, value=0)
+ 
+# And a label for it
+label_1 = Label(master, text="Companies Done:")
+label_2 = Label(master, text="")
+label_3 = Label(master, text="")
+label_4 = Label(master, text="")
+label_5 = Label(master, text="Currently Fetching For:")
+label_6 = Label(master, text="Progress:")
+ 
+# Use the grid manager
+label_1.grid(row=0, column=0)
+label_2.grid(row=1, column=1)
+label_3.grid(row=0, column=1)
+label_4.grid(row=2, column=2)
+label_5.grid(row=1, column=0)
+label_6.grid(row=2, column=0)
+progress_bar.grid(row=2, column=1)
+ 
+# Necessary, as the master object needs to draw the progressbar widget
+# Otherwise, it will not be visible on the screen
+master.update()
+ 
+progress_bar['value'] = 0
+master.update()
+
+maxVal=len(companyList)
 for i,company in enumerate(companyList):
+    label_3["text"]=str(i)+"/"+str(maxVal)
+    label_2["text"]=company
     print(i,index)
     if(i>index):
         print(index)
-        getPredictions( company )
-        resultDataset.to_csv("resultDataset.csv")
-        with open("cindex.txt", "wb") as fp:
+        getPredictions( company)
+        resultDataset.to_csv(dateTime+"/resultDataset.csv")
+        with open(dateTime+"/cindex.txt", "wb") as fp:
             pickle.dump(i, fp)
+    progress_bar['value'] =0
+    master.update()
+with open("dtime.txt", "wb") as fp:
+    pickle.dump("", fp)
+
+with open(dateTime+"/filePath.txt", "wb") as fp:
+    pickle.dump("", fp)
+with open(dateTime+"/cindex.txt", "wb") as fp:
+    pickle.dump(-1, fp)
+exit()     
+# The application mainloop
+mainloop()
