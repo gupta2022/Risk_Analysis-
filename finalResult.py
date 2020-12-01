@@ -19,14 +19,15 @@ import requests
 import sys
 import threading
 import os
-
+from fake_useragent import UserAgent
+ua = UserAgent()
 
 #For help only
 #tags searched
 map_labels={0:"bribery",1:"corruption",2:"defamation",3:"fraud",4:"none",5:"scam"}
 #used to identify a system
 headers = {
-    'user-agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:82.0) Gecko/20100101 Firefox/82.0' }
+    'user-agent': ua.chrome }
 
 
 index=-1 #used to resume progress
@@ -41,7 +42,11 @@ try:
     with open("dtime.txt", "rb") as fp:   # Unpickling
         dateTime = pickle.load(fp)
         if(dateTime!=""):
-            firstRun=False 
+            firstRun=False
+        else:
+            dateTime=str(datetime.now().strftime("%d/%m/%Y %H:%M:%S")).replace("/","-")
+            dateTime=dateTime.replace(":","-")
+
 except:
     print("1st Run")
     dateTime=str(datetime.now().strftime("%d/%m/%Y %H:%M:%S")).replace("/","-")
@@ -51,7 +56,7 @@ if( firstRun==False):
     try:
         #reading the csv file containg url and tags
         resultDataset = pd.read_csv(dateTime+'/resultDataset.csv')
-    except:       
+    except:
         messagebox.showinfo("Error","ResultDataset.csv not found to reume operation")
         exit()
 
@@ -72,14 +77,14 @@ if( firstRun==False):
     #checking error for filepath
     if(filePath!=""):
         answer = messagebox.askokcancel("Resume", "Found and old instance, countinue that?")
-    
+
     Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
-    
+
     if(answer==False):
         filePath = askopenfilename() # show an "Open" dialog box and return the path to the selected file
         index=-1
         resultDataset=pd.DataFrame(columns=["company","bribery","corruption","defamation","fraud","scam","none"])
-    
+
 
 else:
     Tk().withdraw()
@@ -251,12 +256,12 @@ def getPredictions(company):
 
 
 master = Tk()
- 
+
 
 # Create a progressbar widget
 progress_bar = ttk.Progressbar(master, orient="horizontal",
                               mode="determinate", maximum=100, value=0)
- 
+
 # And a label for it
 label_1 = Label(master, text="Companies Done:")
 label_2 = Label(master, text="")
@@ -264,7 +269,7 @@ label_3 = Label(master, text="")
 label_4 = Label(master, text="")
 label_5 = Label(master, text="Currently Fetching For:")
 label_6 = Label(master, text="Progress:")
- 
+
 # Use the grid manager
 label_1.grid(row=0, column=0)
 label_2.grid(row=1, column=1)
@@ -273,11 +278,11 @@ label_4.grid(row=2, column=2)
 label_5.grid(row=1, column=0)
 label_6.grid(row=2, column=0)
 progress_bar.grid(row=2, column=1)
- 
+
 # Necessary, as the master object needs to draw the progressbar widget
 # Otherwise, it will not be visible on the screen
 master.update()
- 
+
 progress_bar['value'] = 0
 master.update()
 
@@ -301,6 +306,6 @@ with open(dateTime+"/filePath.txt", "wb") as fp:
     pickle.dump("", fp)
 with open(dateTime+"/cindex.txt", "wb") as fp:
     pickle.dump(-1, fp)
-exit()     
+exit()
 # The application mainloop
 mainloop()
