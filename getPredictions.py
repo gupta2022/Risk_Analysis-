@@ -15,11 +15,15 @@ import sys
 import threading
 import os
 from fake_useragent import UserAgent
+from sqlalchemy import create_engine
+engine = create_engine('sqlite://', echo=False)
 ua = UserAgent()
 
 map_labels={0:"bribery",1:"corruption",2:"defamation",3:"fraud",4:"none",5:"scam"}
 #used to identify a system
-
+resultDataset=pd.DataFrame(columns=["company","bribery","corruption","defamation","fraud","scam","none"])
+dateTime=str(datetime.now().strftime("%d/%m/%Y %H:%M:%S")).replace("/","-")
+dateTime=dateTime.replace(":","-")
 headers = {
     'user-agent': ua.chrome }
 
@@ -131,6 +135,7 @@ def getPredictions(company):
                         break
 
 #    companyData.to_csv(dateTime+"/companyData/"+company+".csv")
+    companyData.to_sql(company, con=engine)
 
     dict1={"company":company}
     total=0
