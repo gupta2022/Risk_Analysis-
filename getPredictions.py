@@ -17,45 +17,12 @@ import os
 from fake_useragent import UserAgent
 ua = UserAgent()
 
-#For help only
-#tags searched
 map_labels={0:"bribery",1:"corruption",2:"defamation",3:"fraud",4:"none",5:"scam"}
 #used to identify a system
+
 headers = {
     'user-agent': ua.chrome }
 
-
-
-filePath=""
-dateTime=str(datetime.now().strftime("%d/%m/%Y %H:%M:%S")).replace("/","-")
-dateTime=dateTime.replace(":","-")
-resultDataset=pd.DataFrame(columns=["company","bribery","corruption","defamation","fraud","scam","none"])
-
-
-#filePath = askopenfilename()
-
-#checking if not file has been selected
-
-# if(filePath==()):
-#     messagebox.showinfo("Error","Connot Work Without CSV file")
-#     exit()
-
-try:
-    data = pd.read_csv(filePath)
-except:
-    #messagebox.showinfo("Error","Unable Read The csv")
-    exit()
-
-try:
-    #reading the list of companies
-    companyList=data["company"].tolist()
-
-except:
- #   messagebox.showinfo("Error","Check if CSV contains column named 'company'")
-    exit()
-#saving date & time of current operation for resumming in future
-
-#generating the url for fetching of 100 articles for a topic
 def clean_url(searched_item,data_filter):
     x=datetime.now()
     today =str(x)[:10]
@@ -174,9 +141,4 @@ def getPredictions(company):
     dict1["none"]=len(companyData)-total
     resultDataset.loc[len(resultDataset.index)]=dict1
     #resultDataset.to_csv(dateTime+"/resultDataset.csv")
-
-
-
-for i,company in enumerate(companyList):
-    getPredictions(company)
 
